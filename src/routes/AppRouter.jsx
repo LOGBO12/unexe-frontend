@@ -9,11 +9,14 @@ import ResetPasswordPage   from '../pages/auth/ResetPasswordPage'
 import InvitationPage      from '../pages/auth/InvitationPage'
 import CompleteProfilePage from '../pages/auth/CompleteProfilePage'
 
-import MainLayout   from '../layouts/MainLayout'
-import PublicLayout from '../layouts/PublicLayout'
+import MainLayout from '../layouts/MainLayout'
 
-import HomePage from '../pages/public/HomePage'
+// Pages publiques — standalone (Navbar + Footer intégrés)
+import HomePage              from '../pages/public/HomePage'
+import CandidatsPublicPage   from '../pages/public/CandidatsPublicPage'
+import PartenairesPublicPage from '../pages/public/PartenairesPublicPage'
 
+// Pages admin
 import DashboardPage        from '../pages/admin/DashboardPage'
 import InvitationsPage      from '../pages/admin/InvitationsPage'
 import CandidaturesPage     from '../pages/admin/CandidaturesPage'
@@ -25,10 +28,19 @@ import LogsPage             from '../pages/admin/LogsPage'
 import ForumPage            from '../pages/admin/ForumPage'
 import ProfilePage          from '../pages/admin/ProfilePage'
 
-const EspaceCandidat  = () => <div className="p-8 text-xl font-bold">🏆 Mon espace candidat (bientôt)</div>
-const CandidatsPublic = () => <div className="p-8 text-xl font-bold">👥 Candidats (bientôt)</div>
-const Partenaires     = () => <div className="p-8 text-xl font-bold">🤝 Partenaires (bientôt)</div>
-const Communaute      = () => <div className="p-8 text-xl font-bold">💬 Communauté (bientôt)</div>
+// Stubs
+const EspaceCandidat = () => (
+  <div className="p-8 text-xl font-bold">🏆 Mon espace candidat (bientôt)</div>
+)
+const Communaute = () => (
+  <div className="min-h-screen flex items-center justify-center" style={{ background: '#F7F7FC' }}>
+    <div className="text-center space-y-3">
+      <div className="text-6xl">💬</div>
+      <p className="text-2xl font-bold">Communauté</p>
+      <p className="text-gray-400">Cette page arrive bientôt.</p>
+    </div>
+  </div>
+)
 
 function PrivateRoute({ children, roles }) {
   const { user, loading } = useAuth()
@@ -62,18 +74,14 @@ export default function AppRouter() {
     <BrowserRouter>
       <Routes>
 
-        {/* ── Accueil public (standalone, avec son propre Navbar + Footer) */}
-        <Route path="/" element={<HomePage />} />
+        {/* Pages publiques standalone (Navbar + Footer intégrés dans chaque page) */}
+        <Route path="/"            element={<HomePage />} />
+        <Route path="/candidats"   element={<CandidatsPublicPage />} />
+        <Route path="/partenaires" element={<PartenairesPublicPage />} />
+        <Route path="/communaute"  element={<Communaute />} />
 
-        {/* Redirection ancienne page comité → accueil */}
+        {/* Ancienne route comité → accueil */}
         <Route path="/comite" element={<Navigate to="/" replace />} />
-
-        {/* Pages publiques avec PublicLayout */}
-        <Route element={<PublicLayout />}>
-          <Route path="/candidats"   element={<CandidatsPublic />} />
-          <Route path="/partenaires" element={<Partenaires />} />
-          <Route path="/communaute"  element={<Communaute />} />
-        </Route>
 
         {/* Auth */}
         <Route path="/login"                 element={<GuestRoute><LoginPage /></GuestRoute>} />
@@ -125,7 +133,6 @@ export default function AppRouter() {
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
-
       </Routes>
     </BrowserRouter>
   )

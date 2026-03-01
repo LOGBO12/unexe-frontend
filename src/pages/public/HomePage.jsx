@@ -305,7 +305,7 @@ export default function HomePage() {
               <Tag>NOS CANDIDATS</Tag>
               <Title>
                 Les meilleurs <br />
-                <span className="text-[#2A2AE0]">étudiants en lice</span>
+                <span className="text-[#2A2AE0]">étudiants en licence prof</span>
               </Title>
               <p className="text-gray-500 text-lg leading-relaxed mb-8">
                 Découvrez les candidats UNEXE sélectionnés parmi les meilleurs étudiants des 5 départements de l'INSTI Lokossa.

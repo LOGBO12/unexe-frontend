@@ -3,24 +3,28 @@ import { useNavigate } from 'react-router-dom'
 import api from '../../api/axios'
 import Navbar from '../../components/public/Navbar'
 import Footer from '../../components/public/Footer'
-import { Search, Filter, GraduationCap, ChevronRight, Users, Award, MapPin, Star, BookOpen } from 'lucide-react'
+import { Search, GraduationCap, Users, Award, BookOpen, Star } from 'lucide-react'
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Config départements (slug → config visuelle) ────────────────────────────
 const DEPT_CONFIG = {
-  GEI:  { label: 'Génie Électrique & Informatique', color: '#2A2AE0', bg: 'rgba(42,42,224,0.08)' },
-  GC:   { label: 'Génie Civil',                     color: '#008751', bg: 'rgba(0,135,81,0.08)' },
-  GMP:  { label: 'Génie Mécanique et Production',   color: '#F0C040', bg: 'rgba(240,192,64,0.1)' },
-  GE:   { label: 'Génie Énergétique',               color: '#E8112D', bg: 'rgba(232,17,45,0.08)' },
-  GT:   { label: 'Génie Thermique',                 color: '#7C3AED', bg: 'rgba(124,58,237,0.08)' },
-  TOUS: { label: 'Tous les départements',           color: '#2A2AE0', bg: 'rgba(42,42,224,0.06)' },
+  GEI: { label: 'Génie Électrique et Informatique', color: '#2A2AE0', bg: 'rgba(42,42,224,0.08)' },
+  GC:  { label: 'Génie Civil',                      color: '#008751', bg: 'rgba(0,135,81,0.08)' },
+  GMP: { label: 'Génie Mécanique et Production',    color: '#F0C040', bg: 'rgba(240,192,64,0.1)' },
+  GE:  { label: 'Génie Énergétique',                color: '#E8112D', bg: 'rgba(232,17,45,0.08)' },
+  MS:  { label: 'Maintenance de Systèmes',           color: '#7C3AED', bg: 'rgba(124,58,237,0.08)' },
 }
 
-const NIVEAU_CONFIG = {
-  L1: 'Licence 1',
-  L2: 'Licence 2',
-  L3: 'Licence 3',
-  M1: 'Master 1',
-  M2: 'Master 2',
+// Récupère la config par slug ou par nom complet
+function getDeptConfig(candidate) {
+  // Essayer par department_slug d'abord
+  if (candidate.department_slug && DEPT_CONFIG[candidate.department_slug]) {
+    return DEPT_CONFIG[candidate.department_slug]
+  }
+  // Sinon chercher par nom
+  const found = Object.values(DEPT_CONFIG).find(d =>
+    d.label.toLowerCase() === candidate.department?.toLowerCase()
+  )
+  return found || { label: candidate.department || 'Département', color: '#2A2AE0', bg: 'rgba(42,42,224,0.08)' }
 }
 
 function Tag({ children, light = false }) {
@@ -41,11 +45,12 @@ function Tag({ children, light = false }) {
 
 // ─── Carte Candidat ───────────────────────────────────────────────────────────
 function CandidateCard({ candidate }) {
-  const dept = DEPT_CONFIG[candidate.department] || DEPT_CONFIG.GEI
+  const dept = getDeptConfig(candidate)
+  const slug = candidate.department_slug || 'GEI'
 
   return (
     <div
-      className="group bg-white rounded-3xl overflow-hidden border transition-all duration-400"
+      className="group bg-white rounded-3xl overflow-hidden border transition-all duration-300"
       style={{
         borderColor: 'rgba(42,42,224,0.08)',
         boxShadow: '0 2px 16px rgba(42,42,224,0.05)',
@@ -64,7 +69,7 @@ function CandidateCard({ candidate }) {
       {/* Photo */}
       <div
         className="relative h-56 overflow-hidden"
-        style={{ background: `linear-gradient(135deg, ${dept.color}20 0%, ${dept.color}40 100%)` }}
+        style={{ background: dept.bg }}
       >
         {candidate.photo_url ? (
           <img
@@ -88,18 +93,16 @@ function CandidateCard({ candidate }) {
           className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider"
           style={{ background: dept.color, color: 'white' }}
         >
-          {candidate.department || 'N/A'}
+          {slug}
         </div>
 
-        {/* Badge niveau */}
-        {candidate.niveau && (
-          <div
-            className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-[10px] font-semibold"
-            style={{ background: 'rgba(0,0,0,0.55)', color: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)' }}
-          >
-            {candidate.niveau}
-          </div>
-        )}
+        {/* Badge année */}
+        <div
+          className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-[10px] font-semibold"
+          style={{ background: 'rgba(0,0,0,0.55)', color: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)' }}
+        >
+          {candidate.year === '1' ? '1ère année' : '2ème année'}
+        </div>
       </div>
 
       {/* Infos */}
@@ -113,33 +116,32 @@ function CandidateCard({ candidate }) {
         <p className="text-xs font-semibold mb-3" style={{ color: dept.color }}>
           {dept.label}
         </p>
+        {candidate.filiere && (
+          <p className="text-xs text-gray-400 mb-2 font-medium">{candidate.filiere}</p>
+        )}
         {candidate.bio && (
           <p className="text-sm leading-relaxed line-clamp-2 mb-4" style={{ color: 'rgba(13,13,26,0.5)' }}>
             {candidate.bio}
           </p>
         )}
 
-        {/* Footer carte */}
         <div className="flex items-center justify-between pt-3 border-t" style={{ borderColor: 'rgba(42,42,224,0.07)' }}>
           <div className="flex items-center gap-1.5">
             <GraduationCap size={13} style={{ color: dept.color }} />
             <span className="text-xs font-medium" style={{ color: 'rgba(13,13,26,0.4)' }}>
-              {NIVEAU_CONFIG[candidate.niveau] || candidate.niveau || 'INSTI Lokossa'}
+              INSTI Lokossa
             </span>
           </div>
-          {candidate.is_validated && (
-            <div className="flex items-center gap-1">
-              <Star size={12} style={{ color: '#F0C040' }} fill="#F0C040" />
-              <span className="text-[10px] font-bold" style={{ color: '#F0C040' }}>Validé</span>
-            </div>
-          )}
+          <div className="flex items-center gap-1">
+            <Star size={12} style={{ color: '#F0C040' }} fill="#F0C040" />
+            <span className="text-[10px] font-bold" style={{ color: '#F0C040' }}>Validé</span>
+          </div>
         </div>
       </div>
     </div>
   )
 }
 
-// ─── Skeleton loader ──────────────────────────────────────────────────────────
 function CardSkeleton() {
   return (
     <div className="bg-white rounded-3xl overflow-hidden border animate-pulse" style={{ borderColor: 'rgba(42,42,224,0.06)' }}>
@@ -157,31 +159,57 @@ function CardSkeleton() {
 // ─── PAGE ─────────────────────────────────────────────────────────────────────
 export default function CandidatsPublicPage() {
   const navigate = useNavigate()
-  const [candidates, setCandidates] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [search, setSearch] = useState('')
-  const [activeDept, setActiveDept] = useState('TOUS')
-  const [activeNiveau, setActiveNiveau] = useState('TOUS')
+
+  // ✅ Structure correcte : { candidates: { "Nom dept": [...] }, departments: [...] }
+  const [grouped, setGrouped]   = useState({})   // objet groupé par département
+  const [allList, setAllList]   = useState([])   // tableau plat pour filtrage
+  const [loading, setLoading]   = useState(true)
+  const [error, setError]       = useState(false)
+  const [search, setSearch]     = useState('')
+  const [activeDept, setActiveDept]   = useState('TOUS')
+  const [activeYear, setActiveYear]   = useState('TOUS')
 
   useEffect(() => {
     window.scrollTo(0, 0)
-    api.get('/public/candidats')
-      .then(res => setCandidates(res.data?.candidats || res.data || []))
+    // ✅ Bonne route : /public/candidates
+    api.get('/public/candidates')
+      .then(res => {
+        const data = res.data
+        // data.candidates est un objet groupé par nom de département
+        const groupedData = data.candidates || {}
+        setGrouped(groupedData)
+
+        // Aplatir pour avoir un tableau de tous les candidats
+        const flat = Object.values(groupedData).flat()
+        setAllList(flat)
+      })
       .catch(() => setError(true))
       .finally(() => setLoading(false))
   }, [])
 
-  // Filtrage
-  const filtered = candidates.filter(c => {
-    const matchSearch = !search || c.name?.toLowerCase().includes(search.toLowerCase())
-    const matchDept   = activeDept === 'TOUS' || c.department === activeDept
-    const matchNiveau = activeNiveau === 'TOUS' || c.niveau === activeNiveau
-    return matchSearch && matchDept && matchNiveau
+  // ─── Filtrage ───────────────────────────────────────────────────────────────
+  const filtered = allList.filter(c => {
+    const matchSearch = !search ||
+      c.name?.toLowerCase().includes(search.toLowerCase())
+    const matchDept = activeDept === 'TOUS' ||
+      c.department_slug === activeDept ||
+      c.department === activeDept
+    const matchYear = activeYear === 'TOUS' || c.year === activeYear
+    return matchSearch && matchDept && matchYear
   })
 
-  const depts   = ['TOUS', ...Object.keys(DEPT_CONFIG).filter(k => k !== 'TOUS')]
-  const niveaux = ['TOUS', ...Object.keys(NIVEAU_CONFIG)]
+  // Regrouper les résultats filtrés par département
+  const filteredGrouped = filtered.reduce((acc, c) => {
+    const key = c.department || 'Autre'
+    if (!acc[key]) acc[key] = []
+    acc[key].push(c)
+    return acc
+  }, {})
+
+  // Départements disponibles (uniquement ceux qui ont des candidats)
+  const availableDepts = Object.keys(grouped)
+
+  const totalCount = allList.length
 
   return (
     <div className="min-h-screen" style={{ background: '#F7F7FC', fontFamily: '"DM Sans", "Segoe UI", sans-serif' }}>
@@ -192,7 +220,6 @@ export default function CandidatsPublicPage() {
         className="relative overflow-hidden pt-32 pb-20 px-6"
         style={{ background: 'linear-gradient(135deg, #08081A 0%, #0D0D2B 55%, #1A1A6A 100%)' }}
       >
-        {/* Hexagones de fond */}
         <div
           className="absolute inset-0 opacity-[0.05]"
           style={{
@@ -215,15 +242,15 @@ export default function CandidatsPublicPage() {
             <span style={{ color: '#A5A5FF' }}>l'INSTI Lokossa</span>
           </h1>
           <p className="text-white/50 text-lg max-w-xl leading-relaxed mb-8">
-            Découvrez les candidats UNEXE sélectionnés parmi les meilleurs étudiants des 5 départements.
+            Découvrez les candidats UNEXE sélectionnés parmi les meilleurs étudiants.
           </p>
 
-          {/* Stats rapides */}
+          {/* Stats */}
           <div className="flex flex-wrap gap-6">
             {[
-              { icon: Users,     val: candidates.length || '—', label: 'Candidats' },
-              { icon: BookOpen,  val: '5',                      label: 'Départements' },
-              { icon: Award,     val: '2',                      label: "Niveaux d'étude" },
+              { icon: Users,    val: totalCount || '—', label: 'Candidats' },
+              { icon: BookOpen, val: availableDepts.length || '—', label: 'Départements' },
+              { icon: Award,    val: '2', label: "Niveaux" },
             ].map((s, i) => {
               const Icon = s.icon
               return (
@@ -246,7 +273,10 @@ export default function CandidatsPublicPage() {
       </section>
 
       {/* ── FILTRES ──────────────────────────────────────────────────────── */}
-      <section className="sticky top-20 z-30 px-6 py-4 border-b" style={{ background: 'rgba(247,247,252,0.97)', backdropFilter: 'blur(16px)', borderColor: 'rgba(42,42,224,0.1)' }}>
+      <section
+        className="sticky top-20 z-30 px-6 py-4 border-b"
+        style={{ background: 'rgba(247,247,252,0.97)', backdropFilter: 'blur(16px)', borderColor: 'rgba(42,42,224,0.1)' }}
+      >
         <div className="max-w-6xl mx-auto space-y-3">
 
           {/* Barre de recherche */}
@@ -257,7 +287,7 @@ export default function CandidatsPublicPage() {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Rechercher un candidat..."
-              className="w-full pl-10 pr-4 py-3 rounded-2xl text-sm font-medium outline-none transition-all duration-200"
+              className="w-full pl-10 pr-4 py-3 rounded-2xl text-sm font-medium outline-none transition-all"
               style={{
                 background: '#FFFFFF',
                 border: '1.5px solid rgba(42,42,224,0.12)',
@@ -268,55 +298,70 @@ export default function CandidatsPublicPage() {
             />
           </div>
 
-          {/* Filtres département + niveau */}
+          {/* Filtres */}
           <div className="flex flex-wrap gap-4 items-center">
-            {/* Départements */}
+
+            {/* Filtre département */}
             <div className="flex flex-wrap gap-1.5">
-              {depts.map(d => {
-                const conf = DEPT_CONFIG[d]
-                const isActive = activeDept === d
+              <button
+                onClick={() => setActiveDept('TOUS')}
+                className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all"
+                style={{
+                  background: activeDept === 'TOUS' ? '#2A2AE0' : 'rgba(42,42,224,0.05)',
+                  color: activeDept === 'TOUS' ? '#FFFFFF' : 'rgba(13,13,26,0.55)',
+                  border: `1.5px solid ${activeDept === 'TOUS' ? '#2A2AE0' : 'rgba(42,42,224,0.1)'}`,
+                }}
+              >
+                Tous
+              </button>
+              {availableDepts.map(deptName => {
+                // Trouver le slug correspondant
+                const slug = Object.entries(DEPT_CONFIG).find(([, v]) =>
+                  v.label.toLowerCase() === deptName.toLowerCase()
+                )?.[0] || deptName
+                const conf = DEPT_CONFIG[slug] || { color: '#2A2AE0' }
+                const isActive = activeDept === deptName
                 return (
                   <button
-                    key={d}
-                    onClick={() => setActiveDept(d)}
-                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200"
+                    key={deptName}
+                    onClick={() => setActiveDept(deptName)}
+                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all"
                     style={{
                       background: isActive ? conf.color : 'rgba(42,42,224,0.05)',
-                      color:      isActive ? '#FFFFFF'   : 'rgba(13,13,26,0.55)',
-                      border:     `1.5px solid ${isActive ? conf.color : 'rgba(42,42,224,0.1)'}`,
+                      color: isActive ? '#FFFFFF' : 'rgba(13,13,26,0.55)',
+                      border: `1.5px solid ${isActive ? conf.color : 'rgba(42,42,224,0.1)'}`,
                     }}
                   >
-                    {d === 'TOUS' ? 'Tous' : d}
+                    {slug}
                   </button>
                 )
               })}
             </div>
 
-            {/* Séparateur */}
             <div className="w-px h-5 bg-gray-200" />
 
-            {/* Niveaux */}
+            {/* Filtre année */}
             <div className="flex flex-wrap gap-1.5">
-              {niveaux.map(n => {
-                const isActive = activeNiveau === n
-                return (
-                  <button
-                    key={n}
-                    onClick={() => setActiveNiveau(n)}
-                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200"
-                    style={{
-                      background: isActive ? '#0D0D1A' : 'rgba(42,42,224,0.05)',
-                      color:      isActive ? '#FFFFFF' : 'rgba(13,13,26,0.55)',
-                      border:     `1.5px solid ${isActive ? '#0D0D1A' : 'rgba(42,42,224,0.1)'}`,
-                    }}
-                  >
-                    {n === 'TOUS' ? 'Tous niveaux' : n}
-                  </button>
-                )
-              })}
+              {[
+                { val: 'TOUS', label: 'Toutes années' },
+                { val: '1',    label: '1ère année' },
+                { val: '2',    label: '2ème année' },
+              ].map(y => (
+                <button
+                  key={y.val}
+                  onClick={() => setActiveYear(y.val)}
+                  className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all"
+                  style={{
+                    background: activeYear === y.val ? '#0D0D1A' : 'rgba(42,42,224,0.05)',
+                    color: activeYear === y.val ? '#FFFFFF' : 'rgba(13,13,26,0.55)',
+                    border: `1.5px solid ${activeYear === y.val ? '#0D0D1A' : 'rgba(42,42,224,0.1)'}`,
+                  }}
+                >
+                  {y.label}
+                </button>
+              ))}
             </div>
 
-            {/* Compteur résultats */}
             <p className="ml-auto text-xs font-semibold" style={{ color: 'rgba(13,13,26,0.35)' }}>
               {filtered.length} candidat{filtered.length !== 1 ? 's' : ''}
             </p>
@@ -324,8 +369,9 @@ export default function CandidatsPublicPage() {
         </div>
       </section>
 
-      {/* ── GRILLE CANDIDATS ─────────────────────────────────────────────── */}
+      {/* ── GRILLE ───────────────────────────────────────────────────────── */}
       <section className="max-w-6xl mx-auto px-6 py-16">
+
         {/* Loading */}
         {loading && (
           <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -338,28 +384,27 @@ export default function CandidatsPublicPage() {
           <div className="text-center py-20">
             <div className="text-6xl mb-4">⚠️</div>
             <p className="text-lg font-bold" style={{ color: '#0D0D1A' }}>Impossible de charger les candidats</p>
-            <p className="text-sm mt-1" style={{ color: 'rgba(13,13,26,0.4)' }}>Vérifiez votre connexion et réessayez.</p>
           </div>
         )}
 
         {/* Aucun résultat */}
         {!loading && !error && filtered.length === 0 && (
           <div className="text-center py-20">
-            <div
-              className="w-20 h-20 rounded-3xl mx-auto flex items-center justify-center mb-5"
-              style={{ background: 'rgba(42,42,224,0.07)' }}
-            >
+            <div className="w-20 h-20 rounded-3xl mx-auto flex items-center justify-center mb-5"
+              style={{ background: 'rgba(42,42,224,0.07)' }}>
               <Search size={32} style={{ color: '#2A2AE0' }} />
             </div>
-            <p className="text-lg font-bold mb-1" style={{ color: '#0D0D1A' }}>Aucun candidat trouvé</p>
+            <p className="text-lg font-bold mb-1" style={{ color: '#0D0D1A' }}>
+              {allList.length === 0 ? 'Aucun candidat pour le moment' : 'Aucun résultat'}
+            </p>
             <p className="text-sm" style={{ color: 'rgba(13,13,26,0.4)' }}>
-              {candidates.length === 0
+              {allList.length === 0
                 ? 'Les candidatures sont en cours de traitement.'
                 : 'Modifiez vos filtres pour voir plus de résultats.'}
             </p>
-            {(search || activeDept !== 'TOUS' || activeNiveau !== 'TOUS') && (
+            {(search || activeDept !== 'TOUS' || activeYear !== 'TOUS') && (
               <button
-                onClick={() => { setSearch(''); setActiveDept('TOUS'); setActiveNiveau('TOUS') }}
+                onClick={() => { setSearch(''); setActiveDept('TOUS'); setActiveYear('TOUS') }}
                 className="mt-4 px-5 py-2.5 text-sm font-bold text-white rounded-xl"
                 style={{ background: '#2A2AE0' }}
               >
@@ -369,54 +414,38 @@ export default function CandidatsPublicPage() {
           </div>
         )}
 
-        {/* Grille */}
+        {/* Candidats groupés par département */}
         {!loading && !error && filtered.length > 0 && (
-          <>
-            {/* Groupement par département si "TOUS" */}
-            {activeDept === 'TOUS' ? (
-              <div className="space-y-14">
-                {Object.entries(
-                  filtered.reduce((acc, c) => {
-                    const d = c.department || 'Autre'
-                    if (!acc[d]) acc[d] = []
-                    acc[d].push(c)
-                    return acc
-                  }, {})
-                ).map(([dept, list]) => {
-                  const conf = DEPT_CONFIG[dept] || { label: dept, color: '#2A2AE0', bg: 'rgba(42,42,224,0.08)' }
-                  return (
-                    <div key={dept}>
-                      {/* Titre département */}
-                      <div className="flex items-center gap-4 mb-6">
-                        <div
-                          className="h-8 w-1.5 rounded-full"
-                          style={{ background: conf.color }}
-                        />
-                        <div>
-                          <span
-                            className="font-black text-xl"
-                            style={{ fontFamily: '"Playfair Display", serif', color: conf.color }}
-                          >
-                            {dept}
-                          </span>
-                          <span className="text-sm ml-3 font-medium" style={{ color: 'rgba(13,13,26,0.4)' }}>
-                            {conf.label} · {list.length} candidat{list.length > 1 ? 's' : ''}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-                        {list.map(c => <CandidateCard key={c.id} candidate={c} />)}
-                      </div>
+          <div className="space-y-14">
+            {Object.entries(filteredGrouped).map(([deptName, candidates]) => {
+              const slug = Object.entries(DEPT_CONFIG).find(([, v]) =>
+                v.label.toLowerCase() === deptName.toLowerCase()
+              )?.[0] || ''
+              const conf = DEPT_CONFIG[slug] || { color: '#2A2AE0' }
+
+              return (
+                <div key={deptName}>
+                  {/* En-tête département */}
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="h-8 w-1.5 rounded-full" style={{ background: conf.color }} />
+                    <div>
+                      <span className="font-black text-xl"
+                        style={{ fontFamily: '"Playfair Display", serif', color: conf.color }}>
+                        {slug || deptName}
+                      </span>
+                      <span className="text-sm ml-3 font-medium" style={{ color: 'rgba(13,13,26,0.4)' }}>
+                        {deptName} · {candidates.length} candidat{candidates.length > 1 ? 's' : ''}
+                      </span>
                     </div>
-                  )
-                })}
-              </div>
-            ) : (
-              <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-                {filtered.map(c => <CandidateCard key={c.id} candidate={c} />)}
-              </div>
-            )}
-          </>
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                    {candidates.map(c => <CandidateCard key={c.id} candidate={c} />)}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         )}
       </section>
 

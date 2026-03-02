@@ -11,7 +11,7 @@ import CompleteProfilePage from '../pages/auth/CompleteProfilePage'
 
 import MainLayout from '../layouts/MainLayout'
 
-// Pages publiques — standalone (Navbar + Footer intégrés)
+// Pages publiques
 import HomePage              from '../pages/public/HomePage'
 import CandidatsPublicPage   from '../pages/public/CandidatsPublicPage'
 import PartenairesPublicPage from '../pages/public/PartenairesPublicPage'
@@ -28,19 +28,13 @@ import LogsPage             from '../pages/admin/LogsPage'
 import ForumPage            from '../pages/admin/ForumPage'
 import ProfilePage          from '../pages/admin/ProfilePage'
 
-// Stubs
-const EspaceCandidat = () => (
-  <div className="p-8 text-xl font-bold">🏆 Mon espace candidat (bientôt)</div>
-)
-const Communaute = () => (
-  <div className="min-h-screen flex items-center justify-center" style={{ background: '#F7F7FC' }}>
-    <div className="text-center space-y-3">
-      <div className="text-6xl">💬</div>
-      <p className="text-2xl font-bold">Communauté</p>
-      <p className="text-gray-400">Cette page arrive bientôt.</p>
-    </div>
-  </div>
-)
+// Pages candidat — vraies pages (plus de stubs !)
+import EspaceCandidatLayout from '../layouts/EspaceCandidatLayout'
+import CandidatDashboard    from '../pages/candidat/CandidatDashboard'
+import CandidatProfil       from '../pages/candidat/CandidatProfil'
+import ForumCommunaute      from '../pages/candidat/ForumCommunaute'
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 function PrivateRoute({ children, roles }) {
   const { user, loading } = useAuth()
@@ -74,16 +68,14 @@ export default function AppRouter() {
     <BrowserRouter>
       <Routes>
 
-        {/* Pages publiques standalone (Navbar + Footer intégrés dans chaque page) */}
+        {/* ── Pages publiques ─────────────────────────────────────────── */}
         <Route path="/"            element={<HomePage />} />
         <Route path="/candidats"   element={<CandidatsPublicPage />} />
         <Route path="/partenaires" element={<PartenairesPublicPage />} />
-        <Route path="/communaute"  element={<Communaute />} />
+        <Route path="/communaute"  element={<Navigate to="/espace-candidat/forum" replace />} />
+        <Route path="/comite"      element={<Navigate to="/" replace />} />
 
-        {/* Ancienne route comité → accueil */}
-        <Route path="/comite" element={<Navigate to="/" replace />} />
-
-        {/* Auth */}
+        {/* ── Auth ────────────────────────────────────────────────────── */}
         <Route path="/login"                 element={<GuestRoute><LoginPage /></GuestRoute>} />
         <Route path="/register"              element={<GuestRoute><RegisterPage /></GuestRoute>} />
         <Route path="/forgot-password"       element={<ForgotPasswordPage />} />
@@ -96,21 +88,21 @@ export default function AppRouter() {
           </PrivateRoute>
         } />
 
-        {/* Espace Admin */}
+        {/* ── Espace Admin ────────────────────────────────────────────── */}
         <Route element={
           <PrivateRoute roles={['super_admin', 'comite']}>
             <MainLayout />
           </PrivateRoute>
         }>
-          <Route path="/dashboard"                element={<DashboardPage />} />
-          <Route path="/dashboard/invitations"    element={<InvitationsPage />} />
-          <Route path="/dashboard/candidatures"   element={<CandidaturesPage />} />
-          <Route path="/dashboard/candidats"      element={<CandidatsAdminPage />} />
-          <Route path="/dashboard/comite"         element={<ComiteMembresPage />} />
-          <Route path="/dashboard/partenaires"    element={<PartenairesAdminPage />} />
-          <Route path="/dashboard/forum"          element={<ForumPage />} />
-          <Route path="/profil"                   element={<ProfilePage />} />
-          <Route path="/dashboard/comite/page" element={
+          <Route path="/dashboard"              element={<DashboardPage />} />
+          <Route path="/dashboard/invitations"  element={<InvitationsPage />} />
+          <Route path="/dashboard/candidatures" element={<CandidaturesPage />} />
+          <Route path="/dashboard/candidats"    element={<CandidatsAdminPage />} />
+          <Route path="/dashboard/comite"       element={<ComiteMembresPage />} />
+          <Route path="/dashboard/partenaires"  element={<PartenairesAdminPage />} />
+          <Route path="/dashboard/forum"        element={<ForumPage />} />
+          <Route path="/profil"                 element={<ProfilePage />} />
+          <Route path="/dashboard/comite/page"  element={
             <PrivateRoute roles={['super_admin']}>
               <ComitePageEditor />
             </PrivateRoute>
@@ -122,17 +114,20 @@ export default function AppRouter() {
           } />
         </Route>
 
-        {/* Espace Candidat */}
+        {/* ── Espace Candidat ─────────────────────────────────────────── */}
         <Route element={
           <PrivateRoute roles={['candidat']}>
-            <MainLayout />
+            <EspaceCandidatLayout />
           </PrivateRoute>
         }>
-          <Route path="/espace-candidat" element={<EspaceCandidat />} />
-          <Route path="/profil"          element={<ProfilePage />} />
+          <Route path="/espace-candidat"        element={<CandidatDashboard />} />
+          <Route path="/espace-candidat/forum"  element={<ForumCommunaute />} />
+          <Route path="/espace-candidat/profil" element={<CandidatProfil />} />
         </Route>
 
+        {/* ── Fallback ────────────────────────────────────────────────── */}
         <Route path="*" element={<Navigate to="/" replace />} />
+
       </Routes>
     </BrowserRouter>
   )

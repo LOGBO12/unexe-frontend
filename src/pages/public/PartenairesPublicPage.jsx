@@ -4,7 +4,6 @@ import Navbar from '../../components/public/Navbar'
 import Footer from '../../components/public/Footer'
 import { ExternalLink, Mail, Phone, Globe, Star, Award, Zap, Heart } from 'lucide-react'
 
-// ─── Config des niveaux de partenariat ───────────────────────────────────────
 const TIER_CONFIG = {
   or:       { label: 'Partenaire Or',      color: '#F0C040', bg: 'rgba(240,192,64,0.08)',  border: 'rgba(240,192,64,0.3)',  icon: Star,  size: 'large'  },
   argent:   { label: 'Partenaire Argent',  color: '#9CA3AF', bg: 'rgba(156,163,175,0.07)', border: 'rgba(156,163,175,0.25)', icon: Award, size: 'medium' },
@@ -28,8 +27,9 @@ function Tag({ children, light = false }) {
   )
 }
 
-// ─── Carte partenaire ─────────────────────────────────────────────────────────
 function PartnerCard({ partner, size = 'medium' }) {
+  // Construire l'URL du logo correctement
+  const logoUrl = partner.logo_url || (partner.logo ? `/storage/${partner.logo}` : null)
   const tier = TIER_CONFIG[partner.tier] || TIER_CONFIG.soutien
   const isLarge  = size === 'large'
   const isMedium = size === 'medium'
@@ -52,7 +52,6 @@ function PartnerCard({ partner, size = 'medium' }) {
         e.currentTarget.style.borderColor = tier.border
       }}
     >
-      {/* Bande colorée tier */}
       <div className="h-1.5 w-full" style={{ background: `linear-gradient(90deg, ${tier.color}, ${tier.color}80)` }} />
 
       {/* Logo */}
@@ -63,12 +62,15 @@ function PartnerCard({ partner, size = 'medium' }) {
           background: tier.bg,
         }}
       >
-        {partner.logo_url ? (
+        {logoUrl ? (
           <img
-            src={partner.logo_url}
+            src={logoUrl}
             alt={partner.name}
             className="max-h-20 max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
-            style={{ filter: 'none' }}
+            onError={(e) => {
+              e.target.style.display = 'none'
+              e.target.parentElement.innerHTML += `<div style="width:64px;height:64px;border-radius:16px;background:${tier.color}20;color:${tier.color};display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;font-family:'Playfair Display',serif">${partner.name?.charAt(0) || '?'}</div>`
+            }}
           />
         ) : (
           <div className="text-center">
@@ -84,7 +86,6 @@ function PartnerCard({ partner, size = 'medium' }) {
 
       {/* Contenu */}
       <div className="p-5 flex-1 flex flex-col">
-        {/* Badge tier */}
         <div className="flex items-center gap-1.5 mb-3">
           <div className="w-1.5 h-1.5 rounded-full" style={{ background: tier.color }} />
           <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: tier.color }}>
@@ -99,13 +100,12 @@ function PartnerCard({ partner, size = 'medium' }) {
           {partner.name}
         </h3>
 
-        {partner.description && (
+        {(partner.contribution || partner.description) && (
           <p className="text-sm leading-relaxed flex-1 mb-4" style={{ color: 'rgba(13,13,26,0.5)' }}>
-            {partner.description}
+            {partner.contribution || partner.description}
           </p>
         )}
 
-        {/* Liens */}
         {(partner.website || partner.email) && (
           <div className="flex flex-wrap gap-2 pt-3 border-t mt-auto" style={{ borderColor: `${tier.color}20` }}>
             {partner.website && (
@@ -138,7 +138,6 @@ function PartnerCard({ partner, size = 'medium' }) {
   )
 }
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
 function PartnerSkeleton() {
   return (
     <div className="bg-white rounded-3xl overflow-hidden border animate-pulse" style={{ borderColor: 'rgba(42,42,224,0.08)' }}>
@@ -154,7 +153,6 @@ function PartnerSkeleton() {
   )
 }
 
-// ─── PAGE ─────────────────────────────────────────────────────────────────────
 export default function PartenairesPublicPage() {
   const [partners, setPartners] = useState([])
   const [loading, setLoading] = useState(true)
@@ -162,13 +160,26 @@ export default function PartenairesPublicPage() {
 
   useEffect(() => {
     window.scrollTo(0, 0)
-    api.get('/public/partenaires')
-      .then(res => setPartners(res.data?.partenaires || res.data || []))
+    // ✅ Correction : appel vers /public/partners (et non /public/partenaires)
+    api.get('/public/partners')
+      .then(res => {
+        // L'API peut retourner un tableau direct ou { partners: [...] }
+        const data = res.data
+        if (Array.isArray(data)) {
+          setPartners(data)
+        } else if (Array.isArray(data?.partenaires)) {
+          setPartners(data.partenaires)
+        } else if (Array.isArray(data?.partners)) {
+          setPartners(data.partners)
+        } else {
+          setPartners([])
+        }
+      })
       .catch(() => setError(true))
       .finally(() => setLoading(false))
   }, [])
 
-  // Grouper par tier
+  // Grouper par tier (si le champ existe), sinon tout mettre en "soutien"
   const grouped = partners.reduce((acc, p) => {
     const t = p.tier || 'soutien'
     if (!acc[t]) acc[t] = []
@@ -183,7 +194,7 @@ export default function PartenairesPublicPage() {
     <div className="min-h-screen" style={{ background: '#F7F7FC', fontFamily: '"DM Sans", "Segoe UI", sans-serif' }}>
       <Navbar />
 
-      {/* ── HERO ─────────────────────────────────────────────────────────── */}
+      {/* HERO */}
       <section
         className="relative overflow-hidden pt-32 pb-20 px-6"
         style={{ background: 'linear-gradient(135deg, #08081A 0%, #0D0D2B 55%, #1A1A6A 100%)' }}
@@ -219,7 +230,7 @@ export default function PartenairesPublicPage() {
         </div>
       </section>
 
-      {/* ── TIERS D'EXPLICATION ──────────────────────────────────────────── */}
+      {/* TIERS */}
       <section className="py-14 px-6 border-b" style={{ background: '#FFFFFF', borderColor: 'rgba(42,42,224,0.07)' }}>
         <div className="max-w-6xl mx-auto">
           <p className="text-xs font-black uppercase tracking-[0.2em] text-center mb-8" style={{ color: 'rgba(13,13,26,0.3)' }}>
@@ -253,17 +264,15 @@ export default function PartenairesPublicPage() {
         </div>
       </section>
 
-      {/* ── CONTENU PRINCIPAL ────────────────────────────────────────────── */}
+      {/* CONTENU */}
       <section className="max-w-6xl mx-auto px-6 py-16">
 
-        {/* Loading */}
         {loading && (
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
             {Array.from({ length: 6 }).map((_, i) => <PartnerSkeleton key={i} />)}
           </div>
         )}
 
-        {/* Erreur */}
         {!loading && error && (
           <div className="text-center py-20">
             <div className="text-6xl mb-4">⚠️</div>
@@ -272,7 +281,6 @@ export default function PartenairesPublicPage() {
           </div>
         )}
 
-        {/* Aucun partenaire */}
         {!loading && !error && partners.length === 0 && (
           <div className="text-center py-20">
             <div
@@ -288,8 +296,8 @@ export default function PartenairesPublicPage() {
           </div>
         )}
 
-        {/* Partenaires groupés par tier */}
-        {hasData && (
+        {/* Partenaires groupés — si le modèle a un champ tier */}
+        {hasData && Object.values(grouped).some(g => g.length > 0) && (
           <div className="space-y-16">
             {tierOrder.map(tier => {
               if (!grouped[tier]?.length) return null
@@ -297,7 +305,6 @@ export default function PartenairesPublicPage() {
               const Icon = conf.icon
               return (
                 <div key={tier}>
-                  {/* En-tête du tier */}
                   <div className="flex items-center gap-4 mb-8">
                     <div
                       className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
@@ -319,7 +326,6 @@ export default function PartenairesPublicPage() {
                     <div className="flex-1 h-px ml-4" style={{ background: `linear-gradient(90deg, ${conf.color}30, transparent)` }} />
                   </div>
 
-                  {/* Grille selon le tier */}
                   <div className={`grid gap-5 ${
                     tier === 'or'
                       ? 'sm:grid-cols-2 md:grid-cols-3'
@@ -338,7 +344,7 @@ export default function PartenairesPublicPage() {
         )}
       </section>
 
-      {/* ── SECTION DEVENIR PARTENAIRE ───────────────────────────────────── */}
+      {/* DEVENIR PARTENAIRE */}
       <section
         className="py-20 px-6"
         style={{ background: 'linear-gradient(135deg, #0D0D1A 0%, #1A1A4A 100%)' }}
@@ -368,30 +374,24 @@ export default function PartenairesPublicPage() {
                   href="mailto:contact@unexe.bj"
                   className="flex items-center gap-3 text-white/60 hover:text-white transition-colors group"
                 >
-                  <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: 'rgba(42,42,224,0.15)', color: '#A5A5FF' }}
-                  >
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(42,42,224,0.15)', color: '#A5A5FF' }}>
                     <Mail size={16} />
                   </div>
                   <div>
                     <p className="text-xs text-white/30 mb-0.5">Email</p>
-                    <p className="text-sm font-semibold group-hover:text-white transition-colors">contact@unexe.bj</p>
+                    <p className="text-sm font-semibold">contact@unexe.bj</p>
                   </div>
                 </a>
                 <a
                   href="tel:+22900000000"
                   className="flex items-center gap-3 text-white/60 hover:text-white transition-colors group"
                 >
-                  <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: 'rgba(0,135,81,0.15)', color: '#4DC896' }}
-                  >
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(0,135,81,0.15)', color: '#4DC896' }}>
                     <Phone size={16} />
                   </div>
                   <div>
                     <p className="text-xs text-white/30 mb-0.5">Téléphone</p>
-                    <p className="text-sm font-semibold group-hover:text-white transition-colors">+229 00 00 00 00</p>
+                    <p className="text-sm font-semibold">+229 00 00 00 00</p>
                   </div>
                 </a>
                 <a
@@ -400,21 +400,18 @@ export default function PartenairesPublicPage() {
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 text-white/60 hover:text-white transition-colors group"
                 >
-                  <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: 'rgba(240,192,64,0.15)', color: '#F0C040' }}
-                  >
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(240,192,64,0.15)', color: '#F0C040' }}>
                     <Globe size={16} />
                   </div>
                   <div>
                     <p className="text-xs text-white/30 mb-0.5">Site web</p>
-                    <p className="text-sm font-semibold group-hover:text-white transition-colors">unexe.bj</p>
+                    <p className="text-sm font-semibold">unexe.bj</p>
                   </div>
                 </a>
               </div>
               <a
                 href="mailto:contact@unexe.bj"
-                className="mt-6 w-full flex items-center justify-center gap-2 py-3.5 text-sm font-bold text-white rounded-2xl transition-all duration-200 hover:scale-105"
+                className="mt-6 w-full flex items-center justify-center gap-2 py-3.5 text-sm font-bold rounded-2xl transition-all duration-200 hover:scale-105"
                 style={{ background: '#F0C040', color: '#0D0D1A' }}
               >
                 Devenir partenaire →

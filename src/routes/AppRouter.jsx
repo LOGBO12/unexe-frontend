@@ -28,11 +28,12 @@ import LogsPage             from '../pages/admin/LogsPage'
 import ForumPage            from '../pages/admin/ForumPage'
 import ProfilePage          from '../pages/admin/ProfilePage'
 
-// Pages candidat — vraies pages (plus de stubs !)
+// Pages candidat
 import EspaceCandidatLayout from '../layouts/EspaceCandidatLayout'
 import CandidatDashboard    from '../pages/candidat/CandidatDashboard'
 import CandidatProfil       from '../pages/candidat/CandidatProfil'
 import ForumCommunaute      from '../pages/candidat/ForumCommunaute'
+import DeposerDossier       from '../pages/candidat/DeposerDossier'
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -58,6 +59,19 @@ function GuestRoute({ children }) {
     return <Navigate to="/espace-candidat" replace />
   }
   return <Navigate to="/dashboard" replace />
+}
+
+/**
+ * Route forum : accessible uniquement aux candidats validés
+ * Les non-validés sont redirigés vers le dashboard candidat
+ */
+function ValidatedCandidateRoute({ children }) {
+  const { user, loading } = useAuth()
+  if (loading) return <LoadingSpinner />
+  if (!user)   return <Navigate to="/login" replace />
+  const isValidated = user.candidate?.status === 'validated'
+  if (!isValidated) return <Navigate to="/espace-candidat" replace />
+  return children
 }
 
 export default function AppRouter() {
@@ -120,9 +134,17 @@ export default function AppRouter() {
             <EspaceCandidatLayout />
           </PrivateRoute>
         }>
-          <Route path="/espace-candidat"        element={<CandidatDashboard />} />
-          <Route path="/espace-candidat/forum"  element={<ForumCommunaute />} />
-          <Route path="/espace-candidat/profil" element={<CandidatProfil />} />
+          {/* Accessible à tous les candidats */}
+          <Route path="/espace-candidat"         element={<CandidatDashboard />} />
+          <Route path="/espace-candidat/dossier" element={<DeposerDossier />} />
+          <Route path="/espace-candidat/profil"  element={<CandidatProfil />} />
+
+          {/* Accessible aux candidats validés uniquement */}
+          <Route path="/espace-candidat/forum" element={
+            <ValidatedCandidateRoute>
+              <ForumCommunaute />
+            </ValidatedCandidateRoute>
+          } />
         </Route>
 
         {/* ── Fallback ────────────────────────────────────────────────── */}

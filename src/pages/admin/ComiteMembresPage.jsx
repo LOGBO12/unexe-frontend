@@ -81,7 +81,7 @@ export default function ComiteMembresPage() {
           </button>
           <button
             onClick={() => setShowForm(!showForm)}
-            className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg transition"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition"
           >
             <Plus size={16} />
             Ajouter un membre
@@ -157,7 +157,7 @@ export default function ComiteMembresPage() {
 
             <div className="md:col-span-2 flex gap-3">
               <button type="submit" disabled={saving}
-                className="px-6 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition">
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition">
                 {saving ? 'Ajout...' : 'Ajouter'}
               </button>
               <button type="button" onClick={() => setShowForm(false)}

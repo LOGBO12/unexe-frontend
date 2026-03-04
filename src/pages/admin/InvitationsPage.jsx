@@ -23,9 +23,8 @@ export default function InvitationsPage() {
   const [success, setSuccess]         = useState(null)
   const [error, setError]             = useState(null)
 
-  const [form, setForm] = useState({
-    email: '', role: 'comite', department_id: ''
-  })
+  // ← year ajouté dans le state initial
+  const [form, setForm] = useState({ email: '', role: 'comite', department_id: '', year: '' })
 
   const load = () => {
     setLoading(true)
@@ -39,7 +38,6 @@ export default function InvitationsPage() {
 
   useEffect(() => {
     load()
-    // Charger les départements
     api.get('/public/candidates').then(res => {
       setDepartments(res.data.departments || [])
     }).catch(() => {})
@@ -53,16 +51,17 @@ export default function InvitationsPage() {
 
     try {
       await api.post('/invite', {
-        email: form.email,
-        role: form.role,
+        email:         form.email,
+        role:          form.role,
         department_id: form.role === 'candidat' ? form.department_id : undefined,
+        year:          form.role === 'candidat' ? form.year : undefined, // ← AJOUT
       })
       setSuccess(`Invitation envoyée à ${form.email} !`)
-      setForm({ email: '', role: 'comite', department_id: '' })
+      setForm({ email: '', role: 'comite', department_id: '', year: '' })
       setShowForm(false)
       load()
     } catch (err) {
-      setError(err.response?.data?.message || 'Erreur lors de l\'envoi.')
+      setError(err.response?.data?.message || "Erreur lors de l'envoi.")
     } finally {
       setSending(false)
     }
@@ -147,7 +146,7 @@ export default function InvitationsPage() {
               </label>
               <select
                 value={form.role}
-                onChange={e => setForm({ ...form, role: e.target.value, department_id: '' })}
+                onChange={e => setForm({ ...form, role: e.target.value, department_id: '', year: '' })}
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 transition bg-white"
               >
                 <option value="comite">🛡️ Membre du Comité</option>
@@ -159,7 +158,7 @@ export default function InvitationsPage() {
             {form.role === 'candidat' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Département
+                  Département *
                 </label>
                 <select
                   value={form.department_id}
@@ -175,11 +174,30 @@ export default function InvitationsPage() {
               </div>
             )}
 
+            {/* ← AJOUT : Année d'étude (si candidat) */}
+            {form.role === 'candidat' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Année d'étude *
+                </label>
+                <select
+                  value={form.year}
+                  onChange={e => setForm({ ...form, year: e.target.value })}
+                  required
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 transition bg-white"
+                >
+                  <option value="">Sélectionner l'année</option>
+                  <option value="1">1ère année</option>
+                  <option value="2">2ème année</option>
+                </select>
+              </div>
+            )}
+
             {/* Info box */}
             <div className="md:col-span-2 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700">
               {form.role === 'comite'
                 ? '🛡️ Le membre du comité recevra un email avec ses identifiants et aura accès au dashboard admin.'
-                : '🏆 Le candidat recevra un email avec ses identifiants. Son compte sera directement validé.'
+                : '🏆 Le candidat recevra un email avec ses identifiants. Son département et son année seront pré-remplis dans son dossier.'
               }
             </div>
 
@@ -189,7 +207,7 @@ export default function InvitationsPage() {
                 disabled={sending}
                 className="px-6 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition"
               >
-                {sending ? 'Envoi...' : 'Envoyer l\'invitation'}
+                {sending ? 'Envoi...' : "Envoyer l'invitation"}
               </button>
               <button
                 type="button"
@@ -231,6 +249,7 @@ export default function InvitationsPage() {
                   <th className="px-5 py-3 text-left">Email</th>
                   <th className="px-4 py-3 text-left">Rôle</th>
                   <th className="px-4 py-3 text-left">Département</th>
+                  <th className="px-4 py-3 text-left">Année</th>{/* ← AJOUT colonne */}
                   <th className="px-4 py-3 text-left">Statut</th>
                   <th className="px-4 py-3 text-left">Envoyée par</th>
                   <th className="px-4 py-3 text-left">Expiration</th>
@@ -254,6 +273,12 @@ export default function InvitationsPage() {
                       </td>
                       <td className="px-4 py-3 text-gray-500 text-sm">
                         {inv.department?.name || '—'}
+                      </td>
+                      {/* ← AJOUT : afficher l'année via le candidate associé */}
+                      <td className="px-4 py-3 text-gray-500 text-sm">
+                        {inv.role === 'candidat' && inv.candidate?.year
+                          ? (inv.candidate.year === '1' ? '1ère année' : '2ème année')
+                          : '—'}
                       </td>
                       <td className="px-4 py-3"><Badge status={status} /></td>
                       <td className="px-4 py-3 text-gray-500">{inv.invited_by?.name || '—'}</td>

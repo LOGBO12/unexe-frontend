@@ -123,12 +123,11 @@ export default function DeposerDossier() {
 
   // Charger la liste des départements seulement si le candidat n'en a pas déjà un
   useEffect(() => {
-    if (!prefilledDept) {
-      api.get('/public/candidates')
-        .then(res => setDepartments(res.data.departments || []))
-        .catch(() => {})
-    }
-  }, [])
+  if (!prefilledDept) {
+    api.get('/public/departments')
+      .then(res => setDepartments(res.data.departments || []))
+  }
+}, [])
 
   // Vérifier si une candidature existe déjà
   useEffect(() => {

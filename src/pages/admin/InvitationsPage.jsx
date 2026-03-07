@@ -37,11 +37,11 @@ export default function InvitationsPage() {
   }
 
   useEffect(() => {
-    load()
-    api.get('/public/candidates').then(res => {
-      setDepartments(res.data.departments || [])
-    }).catch(() => {})
-  }, [])
+  load()
+  api.get('/public/departments').then(res => {
+    setDepartments(res.data.departments || [])
+  }).catch(() => {})
+}, [])
 
   const handleSend = async (e) => {
     e.preventDefault()

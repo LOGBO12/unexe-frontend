@@ -10,6 +10,7 @@ import {
   Settings,
   Timer,
   UserPlus,
+  Trophy,
 } from 'lucide-react'
 
 const navigation = [
@@ -31,6 +32,13 @@ const navigation = [
     path:  '/dashboard/candidats',
     icon:  UserCheck,
     label: 'Candidats',
+    roles: ['super_admin', 'comite'],
+    dividerAfter: false,
+  },
+  {
+    path:  '/dashboard/competition',
+    icon:  Trophy,
+    label: 'Concours',
     roles: ['super_admin', 'comite'],
     dividerAfter: false,
   },
@@ -60,17 +68,17 @@ const navigation = [
     icon:  MessageSquare,
     label: 'Forum',
     roles: ['super_admin', 'comite'],
-    dividerAfter: true,   // ← séparateur avant la section admin
+    dividerAfter: true,
   },
 
-  // ── Section super_admin uniquement ────────────────────────────────────────
+  // ── Section super_admin uniquement ──────────────────────────────────────
   {
     path:  '/dashboard/registration',
     icon:  Timer,
     label: 'Inscriptions',
     roles: ['super_admin'],
     dividerAfter: false,
-    badge: 'Admin',       // badge visuel optionnel
+    badge: 'Admin',
   },
   {
     path:  '/dashboard/comite/page',
